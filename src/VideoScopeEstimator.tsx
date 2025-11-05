@@ -1,16 +1,26 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Calculator, Clock, Calendar } from 'lucide-react';
 
+// Define types for better TypeScript support
+type ProjectType = 'lecture' | 'editorial';
+type LiftLevel = 'light' | 'medium' | 'heavy';
+
+type QuotientMap = {
+  [K in ProjectType]: {
+    [L in LiftLevel]: number;
+  };
+};
+
 const VideoScopeEstimator = () => {
-  const [projectType, setProjectType] = useState('lecture');
+  const [projectType, setProjectType] = useState<ProjectType>('lecture');
   const [finishedMinutes, setFinishedMinutes] = useState(40);
-  const [editingLift, setEditingLift] = useState('medium');
-  const [finishingLift, setFinishingLift] = useState('medium');
+  const [editingLift, setEditingLift] = useState<LiftLevel>('medium');
+  const [finishingLift, setFinishingLift] = useState<LiftLevel>('medium');
   const [hoursPerDay, setHoursPerDay] = useState(5);
   const [bufferPercent, setBufferPercent] = useState(10);
 
   // Quotient definitions by project type
-  const editingQuotients = {
+  const editingQuotients: QuotientMap = {
     lecture: {
       light: 5.5,
       medium: 8,
@@ -23,7 +33,7 @@ const VideoScopeEstimator = () => {
     }
   };
 
-  const finishingQuotients = {
+  const finishingQuotients: QuotientMap = {
     lecture: {
       light: 1.5,
       medium: 2.5,
@@ -58,8 +68,8 @@ const VideoScopeEstimator = () => {
     };
   }, [finishedMinutes, editingLift, finishingLift, hoursPerDay, bufferPercent, projectType]);
 
-  const getLiftColor = (lift) => {
-    const colors = {
+  const getLiftColor = (lift: LiftLevel): string => {
+    const colors: Record<LiftLevel, string> = {
       light: 'bg-green-100 text-green-800 border-green-300',
       medium: 'bg-yellow-100 text-yellow-800 border-yellow-300',
       heavy: 'bg-red-100 text-red-800 border-red-300'
@@ -137,7 +147,7 @@ const VideoScopeEstimator = () => {
                 Editorial Lift Level
               </label>
               <div className="grid grid-cols-3 gap-2">
-                {['light', 'medium', 'heavy'].map((level) => (
+                {(['light', 'medium', 'heavy'] as LiftLevel[]).map((level) => (
                   <button
                     key={level}
                     onClick={() => setEditingLift(level)}
@@ -162,7 +172,7 @@ const VideoScopeEstimator = () => {
                 Finishing Complexity (Color/Audio)
               </label>
               <div className="grid grid-cols-3 gap-2">
-                {['light', 'medium', 'heavy'].map((level) => (
+                {(['light', 'medium', 'heavy'] as LiftLevel[]).map((level) => (
                   <button
                     key={level}
                     onClick={() => setFinishingLift(level)}
