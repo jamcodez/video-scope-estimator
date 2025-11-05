@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { Calculator, Clock, Calendar } from 'lucide-react';
 
 const VideoScopeEstimator = () => {
