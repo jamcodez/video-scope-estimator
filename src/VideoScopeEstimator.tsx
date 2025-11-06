@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Calculator, Clock, Calendar } from 'lucide-react';
+import { Calculator, Clock, Calendar, Film } from 'lucide-react';
 
 // Define types for better TypeScript support
 type ProjectType = 'lecture' | 'editorial';
 type LiftLevel = 'light' | 'medium' | 'heavy';
+type EditorialStyle = 'multicam' | 'high-ratio';
 
 type QuotientMap = {
   [K in ProjectType]: {
@@ -11,25 +12,39 @@ type QuotientMap = {
   };
 };
 
+type EditorialQuotientMap = {
+  [S in EditorialStyle]: {
+    [L in LiftLevel]: number;
+  };
+};
+
 const VideoScopeEstimator = () => {
   const [projectType, setProjectType] = useState<ProjectType>('lecture');
+  const [editorialStyle, setEditorialStyle] = useState<EditorialStyle>('multicam');
   const [finishedMinutes, setFinishedMinutes] = useState(40);
   const [editingLift, setEditingLift] = useState<LiftLevel>('medium');
   const [finishingLift, setFinishingLift] = useState<LiftLevel>('medium');
   const [hoursPerDay, setHoursPerDay] = useState(5);
   const [bufferPercent, setBufferPercent] = useState(10);
 
-  // Quotient definitions by project type
-  const editingQuotients: QuotientMap = {
-    lecture: {
-      light: 5.5,
-      medium: 8,
-      heavy: 12.5
-    },
-    editorial: {
+  // Lecture quotients (unchanged)
+  const lectureEditingQuotients = {
+    light: 5.5,
+    medium: 8,
+    heavy: 12.5
+  };
+
+  // Editorial quotients by style
+  const editorialEditingQuotients: EditorialQuotientMap = {
+    multicam: {
       light: 11,
       medium: 14,
       heavy: 21.5
+    },
+    'high-ratio': {
+      light: 18,
+      medium: 25,
+      heavy: 35
     }
   };
 
@@ -46,9 +61,18 @@ const VideoScopeEstimator = () => {
     }
   };
 
+  // Get the appropriate editing quotient based on project type and style
+  const getEditingQuotient = (lift: LiftLevel): number => {
+    if (projectType === 'lecture') {
+      return lectureEditingQuotients[lift];
+    } else {
+      return editorialEditingQuotients[editorialStyle][lift];
+    }
+  };
+
   // Calculate results
   const results = useMemo(() => {
-    const editingQ = editingQuotients[projectType][editingLift];
+    const editingQ = getEditingQuotient(editingLift);
     const finishingQ = finishingQuotients[projectType][finishingLift];
     
     const totalMinutes = finishedMinutes * (editingQ + finishingQ);
@@ -66,7 +90,7 @@ const VideoScopeEstimator = () => {
       editingQ,
       finishingQ
     };
-  }, [finishedMinutes, editingLift, finishingLift, hoursPerDay, bufferPercent, projectType]);
+  }, [finishedMinutes, editingLift, finishingLift, hoursPerDay, bufferPercent, projectType, editorialStyle]);
 
   const getLiftColor = (lift: LiftLevel): string => {
     const colors: Record<LiftLevel, string> = {
@@ -75,6 +99,13 @@ const VideoScopeEstimator = () => {
       heavy: 'bg-red-100 text-red-800 border-red-300'
     };
     return colors[lift];
+  };
+
+  const getCurrentEditingQuotients = () => {
+    if (projectType === 'lecture') {
+      return lectureEditingQuotients;
+    }
+    return editorialEditingQuotients[editorialStyle];
   };
 
   return (
@@ -120,6 +151,44 @@ const VideoScopeEstimator = () => {
               </div>
             </button>
           </div>
+
+          {/* Editorial Style Toggle - Only shows for Editorial projects */}
+          {projectType === 'editorial' && (
+            <div className="mt-6 pt-6 border-t border-slate-200">
+              <div className="flex items-center gap-2 mb-3">
+                <Film className="w-5 h-5 text-purple-600" />
+                <h4 className="text-md font-semibold text-slate-800">Editorial Style</h4>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setEditorialStyle('multicam')}
+                  className={`p-3 rounded-lg border-2 transition-all text-left ${
+                    editorialStyle === 'multicam'
+                      ? 'bg-purple-50 border-purple-400 text-purple-900'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="font-medium mb-1">Multicam / Structured</div>
+                  <div className="text-xs opacity-75">
+                    Multiple cameras, sync'd footage, moderate selects work
+                  </div>
+                </button>
+                <button
+                  onClick={() => setEditorialStyle('high-ratio')}
+                  className={`p-3 rounded-lg border-2 transition-all text-left ${
+                    editorialStyle === 'high-ratio'
+                      ? 'bg-purple-50 border-purple-400 text-purple-900'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="font-medium mb-1">High-Ratio Selects</div>
+                  <div className="text-xs opacity-75">
+                    Extensive footage culling (e.g., 3 hrs → 5 min), intensive selection
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
@@ -162,7 +231,7 @@ const VideoScopeEstimator = () => {
                 ))}
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                Light: {editingQuotients[projectType].light} min/min • Medium: {editingQuotients[projectType].medium} min/min • Heavy: {editingQuotients[projectType].heavy} min/min
+                Light: {getCurrentEditingQuotients().light} min/min • Medium: {getCurrentEditingQuotients().medium} min/min • Heavy: {getCurrentEditingQuotients().heavy} min/min
               </p>
             </div>
 
@@ -307,6 +376,7 @@ const VideoScopeEstimator = () => {
                   projectType === 'lecture' ? 'bg-indigo-100 text-indigo-800' : 'bg-purple-100 text-purple-800'
                 }`}>
                   {projectType}
+                  {projectType === 'editorial' && ` (${editorialStyle === 'multicam' ? 'multicam' : 'high-ratio'})`}
                 </span> video with{' '}
                 <span className={`font-semibold px-1.5 py-0.5 rounded ${getLiftColor(editingLift)}`}>
                   {editingLift}
